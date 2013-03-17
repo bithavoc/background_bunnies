@@ -1,0 +1,11 @@
+module BackgroundBunnies
+
+  def self.log(a)
+    p "[log] BackgroundBunnies -> #{a}"
+  end
+
+  def self.info(a)
+    p "[info] BackgroundBunnies -> #{a}"
+  end
+
+end
