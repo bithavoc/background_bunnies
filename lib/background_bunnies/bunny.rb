@@ -69,9 +69,15 @@ module BackgroundBunnies
         unless err
           @channel.ack(info.delivery_tag, false)
         else
-          log_error "Error processing #{info.delivery_tag}: #{err.message}, #{err.backtrace.join('\n')}"
+          # processing went wrong, requeing message
+          @channel.reject(info.delivery_tag, true)
+          on_error(job, err)
         end
       end
+    end
+
+    def on_error(job, err)
+        log_error "Error processing #{job.info.delivery_tag}: #{err.message}, #{err.backtrace.join('\n')}"
     end
 
     def log_error(a)

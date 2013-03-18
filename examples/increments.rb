@@ -8,12 +8,13 @@ class BackgroundBunnies::Workers::IncrementCounter
   include BackgroundBunnies::Bunny
   group :default
   def process(job)
-    if rand 0.5
-      raise "intentional random error"
-    end
     step = job.payload['step'] || 1
     self.class.counter += step
     p "Incrementing: #{step} for a total of #{self.class.counter}"
+  end
+
+  def on_error(job, err)
+    super # log the error to stderr
   end
 
   def self.counter
