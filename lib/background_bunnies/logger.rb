@@ -8,4 +8,8 @@ module BackgroundBunnies
     p "[info] BackgroundBunnies -> #{a}"
   end
 
+  def self.error(a)
+    $stderr.puts "[error] BackgroundBunnies -> #{a}"
+  end
+
 end

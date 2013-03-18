@@ -68,8 +68,14 @@ module BackgroundBunnies
         end
         unless err
           @channel.ack(info.delivery_tag, false)
+        else
+          log_error "Error processing #{info.delivery_tag}: #{err.message}, #{err.backtrace.join('\n')}"
         end
       end
+    end
+
+    def log_error(a)
+      BackgroundBunnies.error "#{queue_name}: #{a}"
     end
 
     #
