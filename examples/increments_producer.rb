@@ -1,9 +1,9 @@
 require_relative 'increments'
 require 'thread'
 connection = Bunny.new
-connection.start
+BackgroundBunnies::configure(:default, connection)
 
-producer = BackgroundBunnies::Workers::IncrementCounter.create_producer connection
+producer = BackgroundBunnies::Workers::IncrementCounter.create_producer :default
 step = 0.1
 while true 
   step += 0.1

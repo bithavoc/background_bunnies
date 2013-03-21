@@ -17,6 +17,8 @@ module BackgroundBunnies
       @configs || @configs = {}
     end
 
+    alias connections configurations
+
     #
     # Configures the connection of a group
     #
