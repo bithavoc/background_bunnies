@@ -1,11 +1,13 @@
 require 'thread'
+require 'bunny'
+require 'amqp'
 require_relative 'job'
 
 module BackgroundBunnies
   module Bunny
 
     module BunnyConfigurators
-
+      DEFAULT_CONNECTION_OPTIONS = {:threaded=>true}
       def group(group_name)
         @group_name = group_name
       end
@@ -20,6 +22,14 @@ module BackgroundBunnies
 
       def queue_name
         @queue_name || demodulized_class_name
+      end
+
+      def connection_options
+        @connection_options || DEFAULT_CONNECTION_OPTIONS.dup
+      end
+
+      def connection_options=(options)
+        @connection_options
       end
 
       def demodulized_class_name
@@ -48,36 +58,41 @@ module BackgroundBunnies
       self.class.queue_name
     end
 
+    def connection_options
+      self.class.connection_options
+    end
+
     attr_reader :channel
     attr_reader :queue
     attr_reader :consumer
+    attr_reader :exchange
+    attr_reader :thread
 
     #
-    # Starts the Worker
+    # Starts the Worker with the given connection or group name
     #
-    def start(connection)
-      @channel = connection.create_channel
+    def start(connection_or_group)
+      @connection = connection_or_group
+      @channel = AMQP::Channel.new(@connection)
       @queue = @channel.queue(queue_name)
-      @consumer = @queue.subscribe(block: false, ack: true) do |info, properties, payload|
-        job = Job.new(JSON.parse!(payload), info, properties)
-        err = nil
+      @consumer = @queue.subscribe(:ack=>true) do |metadata, payload|
+        info = metadata
+        properties = nil
         begin 
+          job = Job.new(JSON.parse!(payload), info, properties)
+          err = nil
           self.process(job) 
-        rescue =>e
-          err = e
-        end
-        unless err
-          @channel.ack(info.delivery_tag, false)
-        else
+          metadata.ack
+        rescue =>err
           # processing went wrong, requeing message
-          @channel.reject(info.delivery_tag, true)
           on_error(job, err)
+          metadata.reject(:requeue=>true)
         end
       end
     end
 
     def on_error(job, err)
-        log_error "Error processing #{job.info.delivery_tag}: #{err.message}, #{err.backtrace.join('\n')}"
+      log_error "Error processing #{job.info.delivery_tag}: #{err.message}, #{err.backtrace.join('\n')}"
     end
 
     def log_error(a)

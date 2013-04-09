@@ -17,6 +17,7 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
   gem.add_dependency "bunny", ">= 0.9.0.pre7"
+  gem.add_dependency "amqp"
   gem.add_development_dependency "rake"
   gem.add_development_dependency "minitest"
 end

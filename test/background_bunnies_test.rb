@@ -130,6 +130,12 @@ describe BackgroundBunnies::Bunny do
               self.delivery_tag = delivery_tag
             end
 
+            attr_accessor :rejected
+
+            def reject(delivery_tag, multiple)
+              @rejected = true
+            end
+
           end
           channel_klass.new
         end
@@ -143,6 +149,7 @@ describe BackgroundBunnies::Bunny do
       worker = StartTest.new
       worker.start connection
       worker.channel.delivery_tag.must_be_nil
+      worker.channel.rejected.must_be :==, true
     end
   end
 
