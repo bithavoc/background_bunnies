@@ -1,13 +1,15 @@
 require 'thread'
 require 'bunny'
 require 'amqp'
+require 'socket'
+
 require_relative 'job'
 
 module BackgroundBunnies
   module Bunny
+    DEFAULT_CONNECTION_OPTIONS = {:threaded=>true}
 
     module BunnyConfigurators
-      DEFAULT_CONNECTION_OPTIONS = {:threaded=>true}
       def group(group_name)
         @group_name = group_name
       end
@@ -16,12 +18,20 @@ module BackgroundBunnies
         @queue_name = queue_name.to_s
       end
 
+      def type(type)
+        @type = type
+      end
+
       def group_name
         @group_name || :default
       end
 
       def queue_name
         @queue_name || demodulized_class_name
+      end
+
+      def queue_type
+        @type || :queue
       end
 
       def connection_options
@@ -45,6 +55,10 @@ module BackgroundBunnies
         BackgroundBunnies::Producer.new(connection, queue_name)
       end
 
+      def create_broadcaster(connection)
+        BackgroundBunnies::Broadcaster.new(connection, queue_name)
+      end
+
     end
 
     def self.included(base)
@@ -56,6 +70,10 @@ module BackgroundBunnies
     #
     def queue_name
       self.class.queue_name
+    end
+
+    def queue_type
+      self.class.queue_type
     end
 
     def connection_options
@@ -74,7 +92,18 @@ module BackgroundBunnies
     def start(connection_or_group)
       @connection = connection_or_group
       @channel = AMQP::Channel.new(@connection)
-      @queue = @channel.queue(queue_name)
+      queue_options = {}
+      name = queue_name
+      if queue_type == :broadcast
+        queue_options[:exclusive] = true
+        queue_options[:auto_delete] = true
+        name = "#{Socket.gethostname}-#{Process.pid}-#{self.object_id}"
+        @queue = @channel.queue(name, queue_options)
+        @exchange = @channel.fanout(BackgroundBunnies.broadcast_exchange_name(queue_name))
+        @queue.bind(@exchange)
+      else
+        @queue = @channel.queue(queue_name, queue_options)
+      end
       @consumer = @queue.subscribe(:ack=>true) do |metadata, payload|
         info = metadata
         properties = nil

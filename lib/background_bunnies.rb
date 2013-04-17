@@ -2,6 +2,7 @@ require "background_bunnies/version"
 require "background_bunnies/logger"
 require "background_bunnies/bunny"
 require "background_bunnies/producer"
+require "background_bunnies/broadcaster"
 require "background_bunnies/job"
 require "background_bunnies/workers"
 require "thread"
@@ -11,6 +12,10 @@ require "amqp"
 module BackgroundBunnies
 
   class << self
+
+    def broadcast_exchange_name(queue_name)
+      "bunnies.broadcasters.#{queue_name}"
+    end
 
     #
     # Group Connection Configurations
