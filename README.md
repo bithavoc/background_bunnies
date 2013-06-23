@@ -147,6 +147,10 @@ Output:
 
 Check `/examples`.
 
+## LICENSE
+
+MIT
+
 ## Contributing
 
 1. Fork it

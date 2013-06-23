@@ -1,4 +1,4 @@
-Copyright (c) 2013 Johan Hernandez
+Copyright (c) 2013 Heapsource - http://www.heapsource.com
 
 MIT License
 
