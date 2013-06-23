@@ -102,6 +102,7 @@ module BackgroundBunnies
         @exchange = @channel.fanout(BackgroundBunnies.broadcast_exchange_name(queue_name))
         @queue.bind(@exchange)
       else
+        queue_options[:durable] = true
         @queue = @channel.queue(queue_name, queue_options)
       end
       @consumer = @queue.subscribe(:ack=>true) do |metadata, payload|
@@ -114,6 +115,7 @@ module BackgroundBunnies
           metadata.ack
         rescue =>err
           # processing went wrong, requeing message
+          job = Job.new(nil, info, properties) unless job
           on_error(job, err)
           metadata.reject(:requeue=>true)
         end

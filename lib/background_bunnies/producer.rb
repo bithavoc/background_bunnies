@@ -11,7 +11,7 @@ module BackgroundBunnies
       @connection = BackgroundBunnies.connect connection_or_group
       @queue_name = queue_name.to_s
       @channel = @connection.create_channel
-      @queue = @connection.queue(@queue_name)
+      @queue = @connection.queue(@queue_name, :durable=>true)
     end
 
     #
