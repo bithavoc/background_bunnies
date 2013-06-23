@@ -116,8 +116,11 @@ module BackgroundBunnies
         rescue =>err
           # processing went wrong, requeing message
           job = Job.new(nil, info, properties) unless job
-          on_error(job, err)
-          metadata.reject(:requeue=>true)
+          unless on_error(job, err)
+            metadata.reject(:requeue=>true)
+          else
+            metadata.ack
+          end
         end
       end
     end
