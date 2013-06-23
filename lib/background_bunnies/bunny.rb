@@ -133,6 +133,14 @@ module BackgroundBunnies
       BackgroundBunnies.error "#{queue_name}: #{a}"
     end
 
+    def log_info(a)
+      BackgroundBunnies.info "#{queue_name}: #{a}"
+    end
+
+    def log_warn(a)
+      BackgroundBunnies.warn "#{queue_name}: #{a}"
+    end
+
     #
     # Process a Job. Implemented by the class.
     #

@@ -1,11 +1,11 @@
 module BackgroundBunnies
 
-  def self.log(a)
-    p "[log] BackgroundBunnies -> #{a}"
+  def self.warn(a)
+    $stderr.puts "[warn] BackgroundBunnies -> #{a}"
   end
 
   def self.info(a)
-    p "[info] BackgroundBunnies -> #{a}"
+    $stdout.puts "[info] BackgroundBunnies -> #{a}"
   end
 
   def self.error(a)
