@@ -11,13 +11,13 @@ Gem::Specification.new do |gem|
   gem.description   = 'AMQP based workers'
   gem.summary       = 'Background workers based on AMQP and the bunny gem'
   gem.homepage      = "https://github.com/bithavoc/background_bunnies"
-
+  gem.licenses      = ['MIT']
   gem.files         = `git ls-files`.split($/)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
   gem.add_dependency "bunny", ">= 0.9.0.pre7"
-  gem.add_dependency "amqp"
-  gem.add_development_dependency "rake"
-  gem.add_development_dependency "minitest"
+  gem.add_dependency '~>0 amqp', '~> 0'
+  gem.add_development_dependency '~>0 rake', '~> 0'
+  gem.add_development_dependency '~>0 minitest', '~> 0'
 end
