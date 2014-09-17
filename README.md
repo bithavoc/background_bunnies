@@ -147,9 +147,9 @@ Output:
 
 Check `/examples`.
 
-## LICENSE
+## License (MIT)
 
-MIT
+Copyright (c) 2012-2014 Bithavoc.io and Contributors - http://bithavoc.io
 
 ## Contributing
 

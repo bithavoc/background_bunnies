@@ -6,11 +6,11 @@ require 'background_bunnies/version'
 Gem::Specification.new do |gem|
   gem.name          = "background_bunnies"
   gem.version       = BackgroundBunnies::VERSION
-  gem.authors       = ["Firebaseco"]
-  gem.email         = ["hello@firebase.co"]
-  gem.description   = %q{AMQP based workers}
-  gem.summary       = %q{Background workers based on AMQP and the bunny gem}
-  gem.homepage      = "https://github.com/firebaseco/background_bunnies"
+  gem.authors       = ["bithavoc"]
+  gem.email         = ["im@bithavoc.io"]
+  gem.description   = 'AMQP based workers'
+  gem.summary       = 'Background workers based on AMQP and the bunny gem'
+  gem.homepage      = "https://github.com/bithavoc/background_bunnies"
 
   gem.files         = `git ls-files`.split($/)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
