@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Background bunnies by bithavoc</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Background bunnies</h1>
+        <h2>AMQP Bunny background workers</h2>
+        <a href="https://github.com/bithavoc/background_bunnies" class="button"><small>View project on</small>GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a name="backgroundbunnies" class="anchor" href="#backgroundbunnies"><span class="octicon octicon-link"></span></a>BackgroundBunnies</h1>
+
+<p>Background workers based on AMQP Bunny gem</p>
+
+<h2>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>Add this line to your application's Gemfile:</p>
+
+<pre><code>gem 'background_bunnies'
+</code></pre>
+
+<p>And then execute:</p>
+
+<pre><code>$ bundle
+</code></pre>
+
+<p>Or install it yourself as:</p>
+
+<pre><code>$ gem install background_bunnies
+</code></pre>
+
+<h2>
+<a name="how-it-works" class="anchor" href="#how-it-works"><span class="octicon octicon-link"></span></a>How it Works</h2>
+
+<p>Background Bunnies are workers fed by producers and broadcasters.</p>
+
+<ul>
+<li>A producer will create jobs intended for bunnies of type <code>queue</code> and only one worker will process the job. This is the default configuration.</li>
+<li>A broadcasters will produce jobs intented for bunnies of type <code>broadcast</code> and every single worker will receive the same job.</li>
+</ul><h2>
+<a name="work-queues" class="anchor" href="#work-queues"><span class="octicon octicon-link"></span></a>Work Queues</h2>
+
+<p>A work client uses AMQP queues and only one bunny will perform the job, this is known as a work queue. This is the default configuration for all the bunnies.</p>
+
+<p>Example Bunny Worker:</p>
+
+<pre><code>require 'background_bunnies'
+
+class BackgroundBunnies::Workers::ImageTransform
+  include BackgroundBunnies::Bunny
+  group :images
+
+  def process(job)
+    image_url = job.payload[:image_url] # https://encrypted.google.com/images/srpr/logo4w.png
+    # perform image transformation here
+  end
+end
+
+BackgroundBunnies.configure(:main, "amqp://guest:guest@127.0.0.1")
+BackgroundBunnies.run(:images) # block forever while running the workers
+</code></pre>
+
+<p>Example Client:</p>
+
+<pre><code>BackgroundBunnies.configure(:main, "amqp://guest:guest@127.0.0.1")
+producer = BackgroundBunnies::Workers::ImageTransform.create_producer :images
+producer.enqueue(image_path: "https://encrypted.google.com/images/srpr/logo4w.png")
+</code></pre>
+
+<h2>
+<a name="broadcast" class="anchor" href="#broadcast"><span class="octicon octicon-link"></span></a>Broadcast</h2>
+
+<p>A broadcast client uses AMQP queues to <code>fanout</code> the same job across many worker bunnies, bunnies will receive the job when mode <code>broadcast</code> is used.</p>
+
+<p>Example Bunny worker:</p>
+
+<pre><code>require 'background_bunnies'
+
+class BackgroundBunnies::Workers::RelyMessage
+  include BackgroundBunnies::Bunny
+  type :broadcast # tell the bunny worker it should use queue as broadcast
+  group :messaging
+
+  def process(job)
+    subject = job.payload[:subject] # "Spread this message across all the worker nodes"
+    # do your thing here
+  end
+end
+
+BackgroundBunnies.configure(:main, "amqp://guest:guest@127.0.0.1")
+BackgroundBunnies.run(:messaging) # block forever while running the workers
+</code></pre>
+
+<p>Example Client:</p>
+
+<pre><code>BackgroundBunnies.configure(:main, "amqp://guest:guest@127.0.0.1")
+producer = BackgroundBunnies::Workers::RelyMessage.create_brodacaster :messaging
+producer.enqueue(subject: "Spread this message across all the worker nodes")
+</code></pre>
+
+<h2>
+<a name="error-handling" class="anchor" href="#error-handling"><span class="octicon octicon-link"></span></a>Error Handling</h2>
+
+<p>In the case an exception is raised while executing the method <code>process</code>, the job will be put back on the queue so it can be processed in another time or by another worker. Even if the worker crashes, the job will be processed in another time or by another worker eventually.</p>
+
+<p>Bunnies provide a method you could override to determinate which errors should cause the job to be requeued or skipped.</p>
+
+<p>Return <code>true</code> if you want to skip the job, the default is requeue the job on every error.</p>
+
+<pre><code>def on_error(job, err)
+  # true and the job will be skipped.
+  # false and the job will be requeued. This is the default.
+end
+</code></pre>
+
+<h2>
+<a name="configuring-connection-strings" class="anchor" href="#configuring-connection-strings"><span class="octicon octicon-link"></span></a>Configuring Connection Strings</h2>
+
+<p>Bunnies will be executed together under the same configuration group. The default group is <code>:default</code>.</p>
+
+<p>A group share the same connection uri across the producers, broadcasters and bunnies:</p>
+
+<p>Example:</p>
+
+<pre><code>BackgroundBunnies.configure(:default, "amqp://guest:guest@127.0.0.1")
+</code></pre>
+
+<h2>
+<a name="executing-a-group-of-workers" class="anchor" href="#executing-a-group-of-workers"><span class="octicon octicon-link"></span></a>Executing a group of Workers</h2>
+
+<p>Instead initializing and running a single worker manually, background bunnies executes in groups.</p>
+
+<pre><code>BackgroundBunnies.run(:default) # block forever while running the workers
+</code></pre>
+
+<h2>
+<a name="workers-as-custom-rake-tasks" class="anchor" href="#workers-as-custom-rake-tasks"><span class="octicon octicon-link"></span></a>Workers as custom Rake Tasks</h2>
+
+<p>If you want to run your workers as a rake task in for example, a Rails app, you can create one as follows:</p>
+
+<p>Create a file in <code>lib/tasks/images.rb</code>:</p>
+
+<pre><code>namespace :mybunnies do
+  task :images=&gt;:environment do
+    BackgroundBunnies.run(:images)
+  end
+end
+</code></pre>
+
+<p>You can then run from the command line:</p>
+
+<pre><code>rake mybunnies:images
+</code></pre>
+
+<h2>
+<a name="logging" class="anchor" href="#logging"><span class="octicon octicon-link"></span></a>Logging</h2>
+
+<p>In your worker bunnies you can use <code>log_error</code>, <code>log_warn</code> and <code>log_info</code> to log information formatted as part of BackgroundBunnies to <code>$stderr</code> and <code>$stdout</code>.</p>
+
+<p>Example:</p>
+
+<pre><code>def process(job)
+  log_error "An error occurred"
+  log_info "Something Happened"
+  log_warn "Beware of this"
+end
+</code></pre>
+
+<p>Output:</p>
+
+<pre><code>[error] BackgroundBunnies -&gt; Songs: An error occurred
+[info] BackgroundBunnies -&gt; Songs: Something Happened
+[warn] BackgroundBunnies -&gt; Songs: Beware of this
+</code></pre>
+
+<h2>
+<a name="examples" class="anchor" href="#examples"><span class="octicon octicon-link"></span></a>Examples</h2>
+
+<p>Check <code>/examples</code>.</p>
+
+<h2>
+<a name="license-mit" class="anchor" href="#license-mit"><span class="octicon octicon-link"></span></a>License (MIT)</h2>
+
+<p>Copyright (c) 2012-2014 Bithavoc.io and Contributors - <a href="http://bithavoc.io">http://bithavoc.io</a></p>
+
+<h2>
+<a name="contributing" class="anchor" href="#contributing"><span class="octicon octicon-link"></span></a>Contributing</h2>
+
+<ol>
+<li>Fork it</li>
+<li>Create your feature branch (<code>git checkout -b my-new-feature</code>)</li>
+<li>Commit your changes (<code>git commit -am 'Add some feature'</code>)</li>
+<li>Push to the branch (<code>git push origin my-new-feature</code>)</li>
+<li>Create new Pull Request</li>
+</ol>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/bithavoc/background_bunnies/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/bithavoc/background_bunnies/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/bithavoc/background_bunnies"></a> is maintained by <a href="https://github.com/bithavoc">bithavoc</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+            <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-54890957-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
