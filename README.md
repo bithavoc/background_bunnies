@@ -75,7 +75,7 @@ Example Bunny worker:
 Example Client:
 
     BackgroundBunnies.configure(:main, "amqp://guest:guest@127.0.0.1")
-    producer = BackgroundBunnies::Workers::RelyMessage.create_brodacaster :messaging
+    producer = BackgroundBunnies::Workers::RelyMessage.create_broadcaster :messaging
 	producer.enqueue(subject: "Spread this message across all the worker nodes")
 
 ## Error Handling
